@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-deploy/
+dist-electron/
+.env
+.env.local
+frontend/node_modules/
+frontend/dist/
+.claude/
+*.DS_Store
+src/scripts/OpenSSH-Win64/
+result*.json

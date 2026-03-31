@@ -1,0 +1,42 @@
+const express = require('express');
+const path = require('path');
+try { require('dotenv').config(); } catch(e) {}
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Support both normal and Electron packaged paths
+const ROOT = process.env.CHECKPC_ROOT || path.join(__dirname, '..');
+
+app.use(express.json({ limit: '10mb' }));
+
+// --- Routes ---
+const scanRoutes = require('./routes/scan');
+const settingsRoutes = require('./routes/settings');
+const auditRoutes = require('./routes/audit');
+
+app.use('/api/scan', scanRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/audit', auditRoutes);
+
+// Health check
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Serve frontend in production
+const distPath = path.join(ROOT, 'frontend', 'dist');
+app.use(express.static(distPath));
+app.get('/{*path}', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
+// Error handling
+app.use((err, _req, res, _next) => {
+  console.error('[Error]', err.message);
+  res.status(err.status || 500).json({ message: err.message || 'Internal server error' });
+});
+
+app.listen(PORT, () => {
+  console.log(`[CheckPC] Server running on http://localhost:${PORT}`);
+});

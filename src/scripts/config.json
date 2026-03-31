@@ -1,0 +1,36 @@
+{
+  "approvedSoftware": [
+    { "name": "Microsoft*", "category": "system" },
+    { "name": "Windows*", "category": "system" },
+    { "name": "Update for*", "category": "system" },
+    { "name": "Security Update*", "category": "system" },
+    { "name": "Hotfix*", "category": "system" },
+    { "name": "Intel*", "category": "driver" },
+    { "name": "Realtek*", "category": "driver" },
+    { "name": "NVIDIA*", "category": "driver" },
+    { "name": "AMD*", "category": "driver" },
+    { "name": "Synaptics*", "category": "driver" },
+    { "name": "Dell*", "category": "driver" },
+    { "name": "HP *", "category": "driver" },
+    { "name": "Lenovo*", "category": "driver" },
+    { "name": "Google Chrome", "category": "authorized" },
+    { "name": "Adobe Acrobat*", "category": "authorized" },
+    { "name": "7-Zip*", "category": "tool" }
+  ],
+  "remoteCommKeywords": [
+    "AnyDesk", "TeamViewer", "LINE", "Skype", "Telegram",
+    "WeChat", "LogMeIn", "RustDesk", "Chrome Remote Desktop",
+    "UltraViewer", "Zoom", "Discord"
+  ],
+  "blockedSites": [
+    { "url": "mail.google.com", "name": "Gmail", "category": "email" },
+    { "url": "drive.google.com", "name": "Google Drive", "category": "email" },
+    { "url": "outlook.live.com", "name": "Outlook.com", "category": "email" },
+    { "url": "onedrive.live.com", "name": "OneDrive Personal", "category": "email" },
+    { "url": "www.youtube.com", "name": "YouTube", "category": "social" },
+    { "url": "www.facebook.com", "name": "Facebook", "category": "social" },
+    { "url": "www.instagram.com", "name": "Instagram", "category": "social" },
+    { "url": "www.threads.net", "name": "Threads", "category": "social" }
+  ],
+  "folderRules": []
+}
