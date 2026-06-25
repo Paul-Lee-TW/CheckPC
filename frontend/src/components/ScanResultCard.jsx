@@ -109,6 +109,40 @@ export function ScanResultCard({ items, itemId }) {
     );
   }
 
+  if (itemId === 'item13') {
+    return (
+      <div className="mt-2 bg-white rounded-lg border border-gray-200 p-3 max-h-60 overflow-auto">
+        <p className="text-xs font-medium text-muted mb-2">本機 Administrators 群組成員：</p>
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-1 pr-2">帳號</th>
+              <th className="text-left py-1 pr-2">類型</th>
+              <th className="text-left py-1">來源</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((m, i) => (
+              <tr key={i} className="border-b border-gray-100">
+                <td className="py-1 pr-2">
+                  <span className="font-medium">{m.name}</span>
+                  {m.isBuiltinAdmin && (
+                    <span className="ml-2 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">內建</span>
+                  )}
+                  {!m.isBuiltinAdmin && m.objectClass === 'User' && (
+                    <span className="ml-2 bg-red-100 text-red-700 px-1.5 py-0.5 rounded">額外管理員</span>
+                  )}
+                </td>
+                <td className="py-1 pr-2 text-muted">{m.objectClass || '-'}</td>
+                <td className="py-1 text-muted">{m.source || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   // 預設：顯示 JSON
   return (
     <div className="mt-2 bg-white rounded-lg border border-gray-200 p-3">

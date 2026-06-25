@@ -396,6 +396,90 @@ try {
     $result.items["item12_print_screensaver"] = @{ error = $_.Exception.Message }
 }
 
+# ===== Item 13: Software Install Permission (non-admin users) =====
+try {
+    # --- Members of local Administrators group (well-known SID S-1-5-32-544, language independent) ---
+    $adminMembers = @()
+    $extraAdminUsers = @()
+    $enumerated = $false
+    try {
+        $members = Get-LocalGroupMember -SID "S-1-5-32-544" -ErrorAction Stop
+        foreach ($m in $members) {
+            $sidVal = ""
+            try { $sidVal = $m.SID.Value } catch {}
+            $isBuiltin = ($sidVal -like "*-500")
+            $cls = "$($m.ObjectClass)"
+            $src = ""
+            try { $src = "$($m.PrincipalSource)" } catch {}
+            $entry = @{
+                name           = (Clean-String "$($m.Name)")
+                sid            = $sidVal
+                objectClass    = $cls
+                source         = $src
+                isBuiltinAdmin = $isBuiltin
+            }
+            $adminMembers += $entry
+            # A non-builtin *user* account in Administrators can install software
+            if ($cls -eq "User" -and -not $isBuiltin) { $extraAdminUsers += $entry }
+        }
+        $enumerated = $true
+    } catch {
+        # Fallback: resolve localized group name from SID and parse `net localgroup`
+        try {
+            $grpName = (Get-LocalGroup -SID "S-1-5-32-544" -ErrorAction Stop).Name
+            $builtinAdminName = ""
+            try {
+                $builtinAdminName = (Get-LocalUser -ErrorAction SilentlyContinue | Where-Object { $_.SID.Value -like "*-500" } | Select-Object -First 1).Name
+            } catch {}
+            $raw = net localgroup "$grpName" 2>$null
+            $capture = $false
+            foreach ($line in $raw) {
+                if ($line -match "^----") { $capture = $true; continue }
+                if (-not $capture) { continue }
+                if ($line -match "The command completed") { continue }
+                $name = "$line".Trim()
+                if ($name -eq "") { continue }
+                $isBuiltin = ($builtinAdminName -ne "" -and $name -ieq $builtinAdminName)
+                $entry = @{
+                    name           = (Clean-String $name)
+                    sid            = ""
+                    objectClass    = "unknown"
+                    source         = ""
+                    isBuiltinAdmin = $isBuiltin
+                }
+                $adminMembers += $entry
+                if (-not $isBuiltin) { $extraAdminUsers += $entry }
+            }
+            $enumerated = $true
+        } catch {}
+    }
+
+    # --- AlwaysInstallElevated: if HKLM AND HKCU are both 1, ANY user can install MSI elevated ---
+    $aieHKLM = (Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer" -Name "AlwaysInstallElevated" -ErrorAction SilentlyContinue).AlwaysInstallElevated
+    $aieHKCU = (Get-ItemProperty "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer" -Name "AlwaysInstallElevated" -ErrorAction SilentlyContinue).AlwaysInstallElevated
+    $alwaysInstallElevated = (($aieHKLM -eq 1) -and ($aieHKCU -eq 1))
+
+    # --- UAC: EnableLUA (UAC on/off) + ConsentPromptBehaviorUser (0 = auto-deny standard users) ---
+    $sysPol = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+    $enableLUA   = (Get-ItemProperty $sysPol -Name "EnableLUA" -ErrorAction SilentlyContinue).EnableLUA
+    $consentUser = (Get-ItemProperty $sysPol -Name "ConsentPromptBehaviorUser" -ErrorAction SilentlyContinue).ConsentPromptBehaviorUser
+
+    $result.items["item13_install_permission"] = @{
+        adminMembers               = @($adminMembers)
+        extraAdminUsers            = @($extraAdminUsers)
+        extraAdminCount            = $extraAdminUsers.Count
+        enumerated                 = $enumerated
+        alwaysInstallElevated      = $alwaysInstallElevated
+        aieHKLM                    = if ($null -ne $aieHKLM) { [int]$aieHKLM } else { "N/A" }
+        aieHKCU                    = if ($null -ne $aieHKCU) { [int]$aieHKCU } else { "N/A" }
+        uacEnabled                 = ($enableLUA -eq 1)
+        consentPromptBehaviorUser  = if ($null -ne $consentUser) { [int]$consentUser } else { "N/A" }
+        standardUserInstallBlocked = ($consentUser -eq 0)
+    }
+} catch {
+    $result.items["item13_install_permission"] = @{ error = $_.Exception.Message }
+}
+
 # ===== Output JSON =====
 $jsonOutput = $result | ConvertTo-Json -Depth 5 -Compress
 # Final cleanup: remove any non-ASCII that slipped through

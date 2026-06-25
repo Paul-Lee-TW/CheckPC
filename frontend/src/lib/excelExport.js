@@ -36,7 +36,7 @@ export function exportToExcel({ auditInfo, scanData, results }) {
   // 檢查項目表頭
   rows.push(['項次', '查核項目', '結果', '備註']);
 
-  // 12 項檢查
+  // 各項檢查
   for (const item of CHECKLIST_ITEMS) {
     const r = results?.[item.id] || {};
     const status = STATUS_TEXT[r.status] || '未檢查';

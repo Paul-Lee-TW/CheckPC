@@ -1,5 +1,5 @@
 /**
- * 12 項稽核檢查定義
+ * 稽核檢查項目定義
  * isAutomatic: true = 由 PowerShell 掃描自動判定
  * scanKey: 對應 JSON 結果中的 key
  * evaluate(data, settings): 接收掃描資料，回傳 { status, detail, items }
@@ -291,6 +291,36 @@ export const CHECKLIST_ITEMS = [
         detail: issues.join('；'),
         items: data.allPrinters,
       };
+    },
+  },
+  {
+    id: 'item13',
+    number: 13,
+    category: '軟體安裝與使用合規',
+    label: '一般使用者（非系統管理員）無自行安裝軟體之權限',
+    description: '檢查本機 Administrators 群組成員、AlwaysInstallElevated 政策與 UAC 設定',
+    isAutomatic: true,
+    scanKey: 'item13_install_permission',
+    evaluate(data) {
+      if (!data || data.error) return { status: 'error', detail: data?.error || '無資料' };
+      const extras = data.extraAdminUsers || [];
+      const issues = [];
+      if (data.alwaysInstallElevated) {
+        issues.push('AlwaysInstallElevated 已啟用，任何使用者皆可提權安裝軟體');
+      }
+      if (extras.length > 0) {
+        issues.push(`${extras.length} 個非內建管理員的使用者帳號具管理權限：${extras.map((u) => u.name).join('、')}`);
+      }
+      if (issues.length > 0) {
+        return { status: 'fail', detail: issues.join('；'), items: data.adminMembers };
+      }
+      const warns = [];
+      if (data.uacEnabled === false) warns.push('UAC 已停用');
+      if (data.standardUserInstallBlocked === false) warns.push('標準使用者可透過 UAC 憑證提示提權安裝');
+      if (warns.length > 0) {
+        return { status: 'warning', detail: `${warns.join('；')}，請確認是否符合政策`, items: data.adminMembers };
+      }
+      return { status: 'pass', detail: '僅內建管理員具備安裝權限，標準使用者受限', items: data.adminMembers };
     },
   },
 ];
