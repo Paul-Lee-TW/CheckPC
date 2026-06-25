@@ -19,6 +19,11 @@ function startServer() {
     const appRoot = getAppRoot();
     process.env.CHECKPC_ROOT = appRoot;
 
+    // Persisted data must live outside the (read-only when packaged) app.asar.
+    if (!process.env.CHECKPC_DATA) {
+      process.env.CHECKPC_DATA = app.getPath('userData');
+    }
+
     try {
       require(path.join(appRoot, 'src', 'server.js'));
     } catch (err) {
