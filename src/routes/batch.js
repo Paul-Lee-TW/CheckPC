@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const { remoteScan } = require('../services/sshScanner');
 const { saveScanResult, newId } = require('../services/resultStore');
+const persistence = require('../services/persistence');
 
 const router = Router();
 
@@ -104,6 +105,19 @@ async function runBatch(job, targets) {
   await Promise.allSettled(workers);
   job.status = 'done';
   console.log(`[Batch] ${job.id} done: ${job.counts.success} ok, ${job.counts.error} failed`);
+
+  // Persist the completed batch + append an audit-trail entry (both password-free).
+  persistence.saveBatch(jobView(job));
+  persistence.appendAuditLog({
+    ts: new Date().toISOString(),
+    operator: job.operator || null,
+    action: 'batch_scan',
+    batchId: job.id,
+    total: job.total,
+    success: job.counts.success,
+    failed: job.counts.error,
+    hosts: job.results.map((r) => ({ host: r.host, status: r.status })),
+  });
 }
 
 // POST /api/scan/batch — 建立批次並背景並行掃描，立即回 202。
@@ -161,19 +175,22 @@ router.post('/', (req, res) => {
   res.status(202).json({ batchId, total: targets.length });
 });
 
-// GET /api/scan/batch — 列出批次摘要（記憶體；落地歷史為 M3）。
+// GET /api/scan/batch — 列出批次摘要（記憶體 + 落地歷史，去重，新到舊）。
 router.get('/', (_req, res) => {
-  const list = [...batchJobs.values()].map(jobSummary).sort((a, b) => b.createdAt - a.createdAt);
+  const mem = [...batchJobs.values()].map(jobSummary);
+  const memIds = new Set(mem.map((j) => j.id));
+  const persisted = persistence.listBatches().filter((b) => !memIds.has(b.id));
+  const list = [...mem, ...persisted].sort((a, b) => b.createdAt - a.createdAt);
   res.json(list);
 });
 
-// GET /api/scan/batch/:batchId — 取得批次進度／結果（不含密碼）。
+// GET /api/scan/batch/:batchId — 取得批次進度／結果（記憶體優先，否則讀落地檔；不含密碼）。
 router.get('/:batchId', (req, res) => {
   const job = batchJobs.get(req.params.batchId);
-  if (!job) {
-    return res.status(404).json({ message: '找不到批次' });
-  }
-  res.json(jobView(job));
+  if (job) return res.json(jobView(job));
+  const persisted = persistence.loadBatch(req.params.batchId);
+  if (persisted) return res.json(persisted);
+  return res.status(404).json({ message: '找不到批次' });
 });
 
 // 安全上限：超過上限時淘汰最舊批次（Map 以插入順序迭代）。
