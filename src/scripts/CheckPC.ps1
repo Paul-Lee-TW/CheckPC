@@ -9,11 +9,13 @@ $ErrorActionPreference = "SilentlyContinue"
 # ===== Sanitize string for safe JSON output =====
 function Clean-String([string]$s) {
     if ([string]::IsNullOrEmpty($s)) { return "" }
-    # Only keep printable ASCII (space to tilde), exclude double-quote to protect JSON
+    # Strip only control chars (0x00-0x1F and 0x7F); keep printable characters
+    # including CJK so Chinese software / printer / account names survive.
+    # ConvertTo-Json escapes embedded double-quotes, so we don't drop them here.
     $sb = New-Object System.Text.StringBuilder
     foreach ($c in $s.ToCharArray()) {
         $code = [int]$c
-        if ($code -ge 0x20 -and $code -le 0x7E -and $code -ne 0x22) {
+        if ($code -ge 0x20 -and $code -ne 0x7F) {
             [void]$sb.Append($c)
         }
     }
@@ -482,11 +484,12 @@ try {
 
 # ===== Output JSON =====
 $jsonOutput = $result | ConvertTo-Json -Depth 5 -Compress
-# Final cleanup: remove any non-ASCII that slipped through
+# Final cleanup: strip only control chars (0x00-0x1F and 0x7F); keep printable
+# characters including CJK so Chinese computer names survive end-to-end.
 $safeOutput = ""
 foreach ($c in $jsonOutput.ToCharArray()) {
     $code = [int]$c
-    if ($code -ge 0x20 -and $code -le 0x7E) {
+    if ($code -ge 0x20 -and $code -ne 0x7F) {
         $safeOutput += $c
     }
 }

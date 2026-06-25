@@ -10,13 +10,20 @@ function sshExec(conn, cmd, timeout = 60000) {
     const timer = setTimeout(() => reject(new Error('Command timeout')), timeout);
     conn.exec(cmd, (err, stream) => {
       if (err) { clearTimeout(timer); return reject(err); }
-      let stdout = '';
-      let stderr = '';
-      stream.on('data', (d) => { stdout += d.toString(); });
-      stream.stderr.on('data', (d) => { stderr += d.toString(); });
+      // Buffer raw chunks and decode once. Decoding per 'data' event with
+      // d.toString() would split multi-byte UTF-8 (CJK) characters across
+      // packet boundaries and silently corrupt them (U+FFFD).
+      const outChunks = [];
+      const errChunks = [];
+      stream.on('data', (d) => { outChunks.push(d); });
+      stream.stderr.on('data', (d) => { errChunks.push(d); });
       stream.on('close', (code) => {
         clearTimeout(timer);
-        resolve({ stdout, stderr, code });
+        resolve({
+          stdout: Buffer.concat(outChunks).toString('utf8'),
+          stderr: Buffer.concat(errChunks).toString('utf8'),
+          code,
+        });
       });
     });
   });
@@ -69,8 +76,9 @@ function remoteScan({ host, port = 22, username, password }) {
           throw new Error(`Empty output. stderr: ${result.stderr.substring(0, 300)}`);
         }
 
-        // Clean and parse JSON
-        const clean = output.replace(/[^\x20-\x7E]/g, '');
+        // Clean and parse JSON — strip only control chars (0x00-0x1F, 0x7F),
+        // keep printable non-ASCII so CJK computer names survive.
+        const clean = output.replace(/[\x00-\x1F\x7F]/g, '');
         const parsed = JSON.parse(clean);
         console.log(`[SSH] Scan complete for ${host}: ${parsed.computerName}`);
         resolve(parsed);
