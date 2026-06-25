@@ -17,6 +17,9 @@ function batchesDir() {
 function auditLogPath() {
   return path.join(dataDir(), 'audit-log.jsonl');
 }
+function inventoryPath() {
+  return path.join(dataDir(), 'inventory.json');
+}
 function ensureDirs() {
   fs.mkdirSync(batchesDir(), { recursive: true });
 }
@@ -95,8 +98,32 @@ function readAuditLog(limit = 200) {
   }
 }
 
+// Host inventory (no credentials). Stored as a plain JSON array.
+function readInventory() {
+  try {
+    if (!fs.existsSync(inventoryPath())) return [];
+    const data = JSON.parse(fs.readFileSync(inventoryPath(), 'utf8'));
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error('[Persist] readInventory 失敗:', e.message);
+    return [];
+  }
+}
+
+function writeInventory(list) {
+  try {
+    fs.mkdirSync(dataDir(), { recursive: true });
+    fs.writeFileSync(inventoryPath(), JSON.stringify(list, null, 2), 'utf8');
+    return true;
+  } catch (e) {
+    console.error('[Persist] writeInventory 失敗:', e.message);
+    return false;
+  }
+}
+
 module.exports = {
-  dataDir, batchesDir, auditLogPath,
+  dataDir, batchesDir, auditLogPath, inventoryPath,
   saveBatch, loadBatch, listBatches,
   appendAuditLog, readAuditLog,
+  readInventory, writeInventory,
 };

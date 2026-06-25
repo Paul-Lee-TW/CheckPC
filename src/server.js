@@ -29,6 +29,7 @@ const batchRoutes = require('./routes/batch');
 const settingsRoutes = require('./routes/settings');
 const auditRoutes = require('./routes/audit');
 const auditLogRoutes = require('./routes/auditLog');
+const inventoryRoutes = require('./routes/inventory');
 
 // Mount the more specific /api/scan/batch before /api/scan.
 app.use('/api/scan/batch', batchRoutes);
@@ -36,6 +37,7 @@ app.use('/api/scan', scanRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/audit-log', auditLogRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/inventory', inventoryRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
