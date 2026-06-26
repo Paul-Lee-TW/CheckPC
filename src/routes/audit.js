@@ -2,6 +2,8 @@ const express = require('express');
 const { Router } = require('express');
 const fs = require('fs');
 const path = require('path');
+const { newId } = require('../services/resultStore');
+const { effectiveConfigPath } = require('../services/configStore');
 
 const router = Router();
 
@@ -18,7 +20,7 @@ router.post('/upload', express.text({ type: '*/*', limit: '10mb' }), (req, res) 
       return res.status(400).json({ message: 'Invalid scan data format' });
     }
 
-    const id = `manual-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const id = `manual-${newId()}`;
     res.json({ id, result: { ...scanData, _scanId: id } });
   } catch (err) {
     res.status(500).json({ message: `Upload failed: ${err.message}` });
@@ -50,7 +52,7 @@ router.post('/upload-file', express.raw({ type: '*/*', limit: '10mb' }), (req, r
       return res.status(400).json({ message: 'Invalid scan data format' });
     }
 
-    const id = `manual-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const id = `manual-${newId()}`;
     res.json({ id, result: { ...scanData, _scanId: id } });
   } catch (err) {
     res.status(500).json({ message: `Parse failed: ${err.message}` });
@@ -67,9 +69,9 @@ router.get('/script', (_req, res) => {
   }
 });
 
-// GET /api/audit/config — 下載設定檔
+// GET /api/audit/config — 下載設定檔（使用者編輯後的有效設定，否則內建範本）
 router.get('/config', (_req, res) => {
-  const configPath = path.join(__dirname, '..', 'scripts', 'config.json');
+  const configPath = effectiveConfigPath();
   if (fs.existsSync(configPath)) {
     res.download(configPath, 'config.json');
   } else {
