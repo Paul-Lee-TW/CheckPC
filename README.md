@@ -123,7 +123,7 @@ npm start                               # 後端同時服務前端：http://loca
 
 ## 建置與部署
 
-> 要「裝在其他 Windows 電腦、並能透過 GitHub 持續更新」？見 **[DEPLOY.md](DEPLOY.md)**：`git clone` + `update.bat`（一鍵 `git pull` + 重建）+ `start.bat`。
+> 要「裝在其他 Windows 電腦、並能透過 GitHub 持續更新」？見 **[DEPLOY.md](DEPLOY.md)**：`git clone` + `.\update.bat`（一鍵 `git pull` + 重建）+ `.\start.bat`。（PowerShell 需 `.\` 前綴）
 
 ### 1) Electron 桌面應用（Windows 可攜版 .exe）
 
@@ -143,10 +143,12 @@ npm run build:win                       # electron-builder → dist-electron/Che
 
 將 `dist-deploy/CheckPC/` 整個資料夾複製到目標 Windows，安裝 Node.js 後：
 
-```bat
-setup.bat   :: 首次安裝依賴
-start.bat   :: 啟動伺服器，瀏覽 http://localhost:3001
+```powershell
+.\setup.bat   # 首次安裝依賴
+.\start.bat   # 啟動伺服器，瀏覽 http://localhost:3001
 ```
+
+> PowerShell 需用 `.\` 前綴執行當前資料夾的腳本（cmd.exe 兩種寫法皆可）。
 
 ---
 
