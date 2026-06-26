@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useBatchPoll } from '../hooks/useBatchPoll';
+import { exportBatchToExcel } from '../lib/excelExport';
 
 const STATUS = {
   pending: { icon: '⏳', cls: 'text-muted', label: '等待中' },
@@ -20,6 +21,7 @@ const ERR_LABEL = {
 export function BatchResultsTable({ batchId, onNewBatch }) {
   const { job, error } = useBatchPoll(batchId);
   const [openErr, setOpenErr] = useState('');
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
 
   const openAudit = async (scanId) => {
@@ -33,6 +35,23 @@ export function BatchResultsTable({ batchId, onNewBatch }) {
     }
   };
 
+  const exportMaster = async (successRows) => {
+    setOpenErr('');
+    setExporting(true);
+    try {
+      const perHostResults = [];
+      for (const r of successRows) {
+        const scanData = await api.get('/scan/results/' + r.scanId);
+        perHostResults.push({ host: r.host, scanData });
+      }
+      exportBatchToExcel({ batch: job, perHostResults });
+    } catch (err) {
+      setOpenErr(`匯出失敗：${err.message}`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (!job) {
     return <div className="text-muted text-sm">{error ? `載入失敗：${error}` : '載入中...'}</div>;
   }
@@ -40,6 +59,7 @@ export function BatchResultsTable({ batchId, onNewBatch }) {
   const finished = job.counts.success + job.counts.error;
   const pct = job.total ? Math.round((finished / job.total) * 100) : 0;
   const done = job.status === 'done';
+  const successRows = job.results.filter((r) => r.status === 'success' && r.scanId);
 
   return (
     <div className="space-y-4">
@@ -53,7 +73,18 @@ export function BatchResultsTable({ batchId, onNewBatch }) {
             : <span className="text-primary ml-3">掃描中...</span>}
           {job.operator && <span className="text-muted ml-3">操作者：{job.operator}</span>}
         </div>
-        <button onClick={onNewBatch} className="text-sm text-primary hover:underline">+ 新批次</button>
+        <div className="flex items-center gap-3">
+          {done && successRows.length > 0 && (
+            <button
+              onClick={() => exportMaster(successRows)}
+              disabled={exporting}
+              className="text-sm px-3 py-1.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              {exporting ? '匯出中...' : `匯出總表（${successRows.length} 台）`}
+            </button>
+          )}
+          <button onClick={onNewBatch} className="text-sm text-primary hover:underline">+ 新批次</button>
+        </div>
       </div>
 
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
