@@ -30,10 +30,12 @@ const settingsRoutes = require('./routes/settings');
 const auditRoutes = require('./routes/audit');
 const auditLogRoutes = require('./routes/auditLog');
 const inventoryRoutes = require('./routes/inventory');
+const sshEnableRoutes = require('./routes/sshEnable');
 
 // Mount the more specific /api/scan/batch before /api/scan.
 app.use('/api/scan/batch', batchRoutes);
 app.use('/api/scan', scanRoutes);
+app.use('/api/ssh-enable', sshEnableRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/audit-log', auditLogRoutes);
 app.use('/api/audit', auditRoutes);

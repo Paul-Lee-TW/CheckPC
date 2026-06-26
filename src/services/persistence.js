@@ -58,7 +58,7 @@ function listBatches(limit = 200) {
       try {
         const v = JSON.parse(fs.readFileSync(path.join(batchesDir(), f), 'utf8'));
         out.push({
-          id: v.id, createdAt: v.createdAt, operator: v.operator,
+          id: v.id, kind: v.kind, createdAt: v.createdAt, operator: v.operator,
           status: v.status, total: v.total, counts: v.counts,
         });
       } catch { /* skip corrupt file */ }
