@@ -1,6 +1,7 @@
 const { Client } = require('ssh2');
 const fs = require('fs');
 const path = require('path');
+const { verifyHostKey } = require('./hostKeys');
 
 const SCRIPT_PATH = path.join(__dirname, '..', 'scripts', 'CheckPC.ps1');
 const CONFIG_PATH = path.join(__dirname, '..', 'scripts', 'config.json');
@@ -93,7 +94,13 @@ function remoteScan({ host, port = 22, username, password }) {
       reject(new Error(`SSH connection failed: ${err.message}`));
     });
 
-    conn.connect({ host, port, username, password, readyTimeout: 15000 });
+    const connectOpts = { host, port, username, password, readyTimeout: 15000 };
+    // Host-key verification (TOFU by default). Disable with CHECKPC_SSH_VERIFY=false.
+    if (process.env.CHECKPC_SSH_VERIFY !== 'false') {
+      connectOpts.hostHash = 'sha256';
+      connectOpts.hostVerifier = (hashedKey) => verifyHostKey(host, port, hashedKey);
+    }
+    conn.connect(connectOpts);
   });
 }
 
