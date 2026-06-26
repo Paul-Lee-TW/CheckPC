@@ -82,6 +82,7 @@ CheckPC/
 
 # 執行期可寫資料目錄（CHECKPC_DATA，預設 ./data；Electron 用 userData）
 data/
+├── config.json                 # 可寫的稽核政策（首次從內建範本 seed；設定頁寫此處）
 ├── batches/<id>.json           # 批次結果落地（不含密碼）
 ├── audit-log.jsonl             # 稽核軌跡（append-only）
 ├── inventory.json              # 主機清單庫存（不含密碼）

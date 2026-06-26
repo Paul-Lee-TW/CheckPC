@@ -1,10 +1,9 @@
 const { Client } = require('ssh2');
-const fs = require('fs');
 const path = require('path');
 const { verifyHostKey } = require('./hostKeys');
+const { effectiveConfigPath } = require('./configStore');
 
 const SCRIPT_PATH = path.join(__dirname, '..', 'scripts', 'CheckPC.ps1');
-const CONFIG_PATH = path.join(__dirname, '..', 'scripts', 'config.json');
 
 function sshExec(conn, cmd, timeout = 60000) {
   return new Promise((resolve, reject) => {
@@ -46,7 +45,6 @@ function sftpUpload(conn, localPath, remotePath) {
 function remoteScan({ host, port = 22, username, password }) {
   return new Promise((resolve, reject) => {
     const conn = new Client();
-    const config = fs.readFileSync(CONFIG_PATH, 'utf-8');
 
     conn.on('ready', async () => {
       try {
@@ -59,8 +57,9 @@ function remoteScan({ host, port = 22, username, password }) {
         console.log(`[SSH] Uploading script to ${host}...`);
         await sftpUpload(conn, SCRIPT_PATH, `${remoteTmp}/CheckPC_scan.ps1`);
 
-        // Step 2: Upload config via SFTP (same directory as script, named config.json)
-        await sftpUpload(conn, CONFIG_PATH, `${remoteTmp}/config.json`);
+        // Step 2: Upload config via SFTP (same dir as script). Use the effective
+        // config — the user-edited copy under CHECKPC_DATA if present, else bundled.
+        await sftpUpload(conn, effectiveConfigPath(), `${remoteTmp}/config.json`);
 
         // Step 3: Execute script (no -ConfigJson param, script reads config.json from its own directory)
         console.log(`[SSH] Running scan on ${host}...`);
