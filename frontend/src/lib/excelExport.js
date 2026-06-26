@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { CHECKLIST_ITEMS } from './checklistItems';
+import { CHECKLIST_ITEMS, evaluateAll } from './checklistItems';
 
 const STATUS_TEXT = {
   pass: '符合',
@@ -92,4 +92,55 @@ export function exportToExcel({ auditInfo, scanData, results }) {
   const filename = `電腦稽核單_${computerName}_${date}.xlsx`;
 
   XLSX.writeFile(wb, filename);
+}
+
+/**
+ * 匯出批次稽核總表（多台彙整成單一活頁簿）。
+ * @param {object} param
+ * @param {object} param.batch - 批次工作（id / operator 等）
+ * @param {Array} param.perHostResults - [{ host, scanData }]（每台成功掃描的原始結果）
+ */
+export function exportBatchToExcel({ batch, perHostResults }) {
+  const wb = XLSX.utils.book_new();
+  const rows = [];
+
+  rows.push(['批次稽核總表']);
+  rows.push([
+    `批次 ID: ${batch?.id || ''}`,
+    `操作者: ${batch?.operator || ''}`,
+    `產生時間: ${new Date().toLocaleString()}`,
+  ]);
+  rows.push([]);
+
+  // 表頭：基本欄 + 每項稽核欄
+  const header = ['電腦名稱', '主機', '符合', '異常', '待確認', '待檢查'];
+  for (const item of CHECKLIST_ITEMS) header.push(`${item.number}. ${item.label}`);
+  rows.push(header);
+
+  // 每台一列
+  for (const { host, scanData } of perHostResults || []) {
+    const results = evaluateAll(scanData);
+    let pass = 0, fail = 0, warning = 0, pending = 0;
+    const statusCells = [];
+    for (const item of CHECKLIST_ITEMS) {
+      const st = results[item.id]?.status;
+      if (st === 'pass') pass++;
+      else if (st === 'fail') fail++;
+      else if (st === 'warning') warning++;
+      else pending++;
+      statusCells.push(STATUS_TEXT[st] || '未檢查');
+    }
+    rows.push([scanData?.computerName || '', host, pass, fail, warning, pending, ...statusCells]);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 18 }, { wch: 16 }, { wch: 6 }, { wch: 6 }, { wch: 8 }, { wch: 8 },
+    ...CHECKLIST_ITEMS.map(() => ({ wch: 16 })),
+  ];
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];
+  XLSX.utils.book_append_sheet(wb, ws, '批次總表');
+
+  const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  XLSX.writeFile(wb, `批次稽核總表_${date}.xlsx`);
 }
