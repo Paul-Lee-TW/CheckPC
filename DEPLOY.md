@@ -69,13 +69,22 @@ data/
 
 ---
 
-## 關於「遠端啟用 OpenSSH」腳本（選用）
+## 關於「遠端啟用 OpenSSH」腳本
 
 `src/scripts/Enable-OpenSSH-Remote.ps1` 與 `Install_OpenSSH_Remote.ps1` 需要本機有
 `src/scripts/OpenSSH-Win64/`（離線 OpenSSH 包）。該資料夾因體積較大而被 `.gitignore`，
-**clone 後不會自動帶**。若要用這兩支腳本，請手動將官方
-[Win32-OpenSSH](https://github.com/PowerShell/Win32-OpenSSH/releases/latest) 解壓到
-`src/scripts/OpenSSH-Win64/`。一般「遠端 SSH 掃描」功能**不需要**這個資料夾。
+clone 後不會帶 —— 但 **`update.bat` 會在偵測到它缺少時，自動從官方
+[Win32-OpenSSH](https://github.com/PowerShell/Win32-OpenSSH/releases) release 下載並解壓**
+（走 HTTPS，並印出 SHA256 供核對）。所以一般情況 clone + `.\update.bat` 後即可用。
+
+需要手動或指定版本時：
+```powershell
+.\src\scripts\Get-OpenSSH.ps1                         # 抓 latest
+.\src\scripts\Get-OpenSSH.ps1 -Version 10.0.0.0p2-Preview -Sha256 <hash>   # 指定版本並驗證
+```
+
+> 一般「遠端 SSH 掃描」功能**不需要**這個資料夾；只有「遠端啟用 OpenSSH」用得到。
+> 若下載失敗（例如離線環境），`update.bat` 只會警告、不中斷；掃描功能照常。
 
 ---
 
