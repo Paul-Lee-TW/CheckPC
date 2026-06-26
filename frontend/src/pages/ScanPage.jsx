@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageCard } from '../components/PageCard';
 import { RemoteScanForm } from '../components/RemoteScanForm';
+import { BatchScanForm } from '../components/BatchScanForm';
+import { BatchResultsTable } from '../components/BatchResultsTable';
 import { api } from '../lib/api';
 
 export function ScanPage() {
   const [tab, setTab] = useState('remote');
   const [jsonText, setJsonText] = useState('');
   const [uploadError, setUploadError] = useState('');
+  const [batchId, setBatchId] = useState(null);
   const navigate = useNavigate();
 
   const handleScanComplete = (data) => {
@@ -72,6 +75,14 @@ export function ScanPage() {
           }`}
         >
           手動上傳
+        </button>
+        <button
+          onClick={() => setTab('batch')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === 'batch' ? 'bg-white shadow text-primary' : 'text-muted hover:text-gray-700'
+          }`}
+        >
+          批次掃描
         </button>
       </div>
 
@@ -151,6 +162,23 @@ export function ScanPage() {
               驗證並繼續
             </button>
           </div>
+        </PageCard>
+      )}
+
+      {/* 批次掃描 */}
+      {tab === 'batch' && (
+        <PageCard title={batchId ? '批次掃描進度' : '批次掃描'}>
+          {!batchId ? (
+            <>
+              <p className="text-sm text-muted mb-4">
+                一次對多台目標 PC 執行遠端掃描。可從主機清單選擇或貼上 IP，使用共用帳密連線。
+                目標 PC 需已啟用 OpenSSH Server。
+              </p>
+              <BatchScanForm onStarted={setBatchId} />
+            </>
+          ) : (
+            <BatchResultsTable batchId={batchId} onNewBatch={() => setBatchId(null)} />
+          )}
         </PageCard>
       )}
     </div>
