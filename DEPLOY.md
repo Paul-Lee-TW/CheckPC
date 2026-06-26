@@ -14,22 +14,24 @@
 
 ## 首次安裝
 
-```bat
+> 💡 **PowerShell 使用者請加 `.\` 前綴**（如 `.\update.bat`）。PowerShell 預設不執行當前資料夾的腳本；`.\` 寫法在 PowerShell 與 cmd.exe 都可用。
+
+```powershell
 git clone https://github.com/Paul-Lee-TW/CheckPC.git
 cd CheckPC
-update.bat        :: 安裝相依套件並建置前端
-start.bat         :: 啟動，瀏覽器開 http://localhost:3001
+.\update.bat
+.\start.bat
 ```
 
-`update.bat` 會：`git pull` → 後端 `npm install` → 前端 `npm install` + `npm run build`。
-首次執行雖然沒有可拉的更新，但會完成安裝與建置。
+- `.\update.bat`：`git pull` → 後端 `npm install` → 前端 `npm install` + `npm run build`（首次無更新可拉，但會完成安裝與建置）。
+- `.\start.bat`：啟動伺服器，瀏覽器開 http://localhost:3001。
 
 ## 更新到最新版
 
-```bat
+```powershell
 cd CheckPC
-update.bat        :: 拉取最新程式 + 重新安裝/建置
-start.bat         :: 重新啟動
+.\update.bat      # 拉取最新程式 + 重新安裝/建置
+.\start.bat       # 重新啟動
 ```
 
 `update.bat` 用 `git pull --ff-only`；若失敗通常是該資料夾有本機修改或切到別的分支，請確認在 `main` 分支且無未提交變更。
@@ -61,7 +63,9 @@ data/
 | `HOST` | `127.0.0.1` | 綁定位址；設 `0.0.0.0` 才開放 LAN（不建議） |
 | `CHECKPC_DATA` | `./data` | 可寫資料目錄 |
 
-於 `start.bat` 前設定，例如：`set PORT=4000 && start.bat`
+啟動前設定，例如：
+- PowerShell：`$env:PORT=4000; .\start.bat`
+- cmd.exe：`set PORT=4000 && start.bat`
 
 ---
 
