@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 
 /**
- * 輪詢批次掃描狀態，直到 status === 'done'。
- * 回傳 { job, error }。
+ * 輪詢作業狀態，直到 status === 'done'。回傳 { job, error }。
+ * basePath 預設批次掃描 '/scan/batch/'，可傳 '/ssh-enable/' 等其他端點。
  */
-export function useBatchPoll(batchId, intervalMs = 1500) {
+export function useBatchPoll(batchId, basePath = '/scan/batch/', intervalMs = 1500) {
   const [job, setJob] = useState(null);
   const [error, setError] = useState('');
   const timer = useRef(null);
@@ -16,7 +16,7 @@ export function useBatchPoll(batchId, intervalMs = 1500) {
 
     const tick = async () => {
       try {
-        const data = await api.get('/scan/batch/' + batchId);
+        const data = await api.get(basePath + batchId);
         if (cancelled) return;
         setJob(data);
         setError('');
@@ -37,7 +37,7 @@ export function useBatchPoll(batchId, intervalMs = 1500) {
       if (timer.current) clearInterval(timer.current);
       timer.current = null;
     };
-  }, [batchId, intervalMs]);
+  }, [batchId, basePath, intervalMs]);
 
   return { job, error };
 }

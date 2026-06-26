@@ -179,7 +179,7 @@ router.post('/', (req, res) => {
 router.get('/', (_req, res) => {
   const mem = [...batchJobs.values()].map(jobSummary);
   const memIds = new Set(mem.map((j) => j.id));
-  const persisted = persistence.listBatches().filter((b) => !memIds.has(b.id));
+  const persisted = persistence.listBatches().filter((b) => b.kind !== 'ssh_enable' && !memIds.has(b.id));
   const list = [...mem, ...persisted].sort((a, b) => b.createdAt - a.createdAt);
   res.json(list);
 });

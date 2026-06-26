@@ -4,6 +4,8 @@ import { PageCard } from '../components/PageCard';
 import { RemoteScanForm } from '../components/RemoteScanForm';
 import { BatchScanForm } from '../components/BatchScanForm';
 import { BatchResultsTable } from '../components/BatchResultsTable';
+import { SshEnableForm } from '../components/SshEnableForm';
+import { SshEnableResultsTable } from '../components/SshEnableResultsTable';
 import { api } from '../lib/api';
 
 export function ScanPage() {
@@ -11,6 +13,7 @@ export function ScanPage() {
   const [jsonText, setJsonText] = useState('');
   const [uploadError, setUploadError] = useState('');
   const [batchId, setBatchId] = useState(null);
+  const [enableId, setEnableId] = useState(null);
   const navigate = useNavigate();
 
   const handleScanComplete = (data) => {
@@ -83,6 +86,14 @@ export function ScanPage() {
           }`}
         >
           批次掃描
+        </button>
+        <button
+          onClick={() => setTab('ssh-enable')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === 'ssh-enable' ? 'bg-white shadow text-primary' : 'text-muted hover:text-gray-700'
+          }`}
+        >
+          啟用 OpenSSH
         </button>
       </div>
 
@@ -178,6 +189,27 @@ export function ScanPage() {
             </>
           ) : (
             <BatchResultsTable batchId={batchId} onNewBatch={() => setBatchId(null)} />
+          )}
+        </PageCard>
+      )}
+
+      {/* 啟用 OpenSSH */}
+      {tab === 'ssh-enable' && (
+        <PageCard title={enableId ? '遠端啟用 OpenSSH 進度' : '遠端啟用 OpenSSH'}>
+          {!enableId ? (
+            <>
+              <p className="text-sm text-muted mb-4">
+                對尚未開啟 SSH 的目標 PC 遠端安裝並啟用 OpenSSH Server（單台或多台），
+                之後即可使用「遠端掃描 / 批次掃描」。需目標可達 SMB(445) 與 RPC(135)。
+              </p>
+              <SshEnableForm onStarted={setEnableId} />
+            </>
+          ) : (
+            <SshEnableResultsTable
+              batchId={enableId}
+              onNewJob={() => setEnableId(null)}
+              onGoScan={() => { setEnableId(null); setTab('remote'); }}
+            />
           )}
         </PageCard>
       )}
