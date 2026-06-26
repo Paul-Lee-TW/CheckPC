@@ -123,6 +123,8 @@ npm start                               # 後端同時服務前端：http://loca
 
 ## 建置與部署
 
+> 要「裝在其他 Windows 電腦、並能透過 GitHub 持續更新」？見 **[DEPLOY.md](DEPLOY.md)**：`git clone` + `update.bat`（一鍵 `git pull` + 重建）+ `start.bat`。
+
 ### 1) Electron 桌面應用（Windows 可攜版 .exe）
 
 ```bash
