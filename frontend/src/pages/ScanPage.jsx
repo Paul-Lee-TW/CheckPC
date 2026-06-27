@@ -6,6 +6,7 @@ import { BatchScanForm } from '../components/BatchScanForm';
 import { BatchResultsTable } from '../components/BatchResultsTable';
 import { SshEnableForm } from '../components/SshEnableForm';
 import { SshEnableResultsTable } from '../components/SshEnableResultsTable';
+import { SshEnableHistory } from '../components/SshEnableHistory';
 import { api } from '../lib/api';
 
 export function ScanPage() {
@@ -203,6 +204,7 @@ export function ScanPage() {
                 之後即可使用「遠端掃描 / 批次掃描」。需目標可達 SMB(445) 與 RPC(135)。
               </p>
               <SshEnableForm onStarted={setEnableId} />
+              <SshEnableHistory onOpen={setEnableId} />
             </>
           ) : (
             <SshEnableResultsTable
