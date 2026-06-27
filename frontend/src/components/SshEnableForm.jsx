@@ -1,16 +1,23 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 
+// 記住「非密碼」欄位於本機瀏覽器，下次自動帶入。密碼基於安全絕不儲存。
+const PREFS_KEY = 'checkpc_sshenable_prefs';
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
+}
+
 /**
  * 遠端啟用 OpenSSH 表單：共用管理員帳密 + 主機清單挑選 + 貼上主機 + 來源限縮 + 並行數。
  * onStarted(batchId) 於成功建立作業後呼叫。
  */
 export function SshEnableForm({ onStarted }) {
-  const [username, setUsername] = useState('');
+  const [prefs] = useState(loadPrefs);
+  const [username, setUsername] = useState(prefs.username || '');
   const [password, setPassword] = useState('');
-  const [operator, setOperator] = useState('');
-  const [allowedSource, setAllowedSource] = useState('');
-  const [concurrency, setConcurrency] = useState(4);
+  const [operator, setOperator] = useState(prefs.operator || '');
+  const [allowedSource, setAllowedSource] = useState(prefs.allowedSource || '');
+  const [concurrency, setConcurrency] = useState(prefs.concurrency || 4);
   const [pasteText, setPasteText] = useState('');
   const [inventory, setInventory] = useState([]);
   const [selected, setSelected] = useState(() => new Set());
@@ -63,6 +70,10 @@ export function SshEnableForm({ onStarted }) {
     const targets = buildTargets();
     if (!username || !password) { setError('請填寫共用的管理員帳號和密碼'); return; }
     if (targets.length === 0) { setError('請至少選擇或輸入一台目標主機'); return; }
+    // 記住非密碼欄位（本機瀏覽器），下次自動帶入。
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({ username, operator, allowedSource, concurrency }));
+    } catch { /* localStorage 不可用時略過 */ }
     setSubmitting(true);
     try {
       const data = await api.post('/ssh-enable', {
@@ -118,6 +129,11 @@ export function SshEnableForm({ onStarted }) {
             placeholder="選填，記入稽核軌跡" className={inputCls} />
         </div>
       </div>
+
+      <p className="text-xs text-muted">
+        ℹ️ 帳號、允許來源、操作者、並行數會記在本機瀏覽器、下次自動帶入；
+        <b>密碼基於安全不會儲存，每次需輸入</b>。
+      </p>
 
       {inventory.length > 0 && (
         <div>
